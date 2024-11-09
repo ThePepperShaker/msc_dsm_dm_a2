@@ -16,12 +16,15 @@ DROP TABLE IF EXISTS Trip CASCADE;
 
 -- Create the Customers table containing customer data, uniquely identified by the customer_id
 CREATE TABLE IF NOT EXISTS Customer (
-    customer_id INT PRIMARY KEY,
-    customer_name VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    phone_number BIGINT NOT NULL,
-    address VARCHAR(255)
+   customer_id INT PRIMARY KEY,
+   customer_name VARCHAR(50) NOT NULL,
+   email VARCHAR(100) NOT NULL UNIQUE,
+   phone_number BIGINT NOT NULL,
+   address VARCHAR(255),
+   frequent_flyer boolean,
+   miles int NULL
 );
+
 
 -- Create the Aircrafts table containing aircraft inventory data and is uniquely identified by the aircraft_id (registration_nr)
 CREATE TABLE IF NOT EXISTS Aircraft  (
