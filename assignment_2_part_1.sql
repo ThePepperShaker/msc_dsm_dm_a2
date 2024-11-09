@@ -1,3 +1,8 @@
+----------------- A.1 Querying with SQL  ----------------
+--------------------  SQL Queries ----------------------- 
+
+-- Project Partners: Oliver Tausendschoen & Timothy Cassel
+
 ----------------------------------------------------------------------------------------------------------------
 -- Query 1: Find customers who have made at least one booking in the last month and their booking details.
 ----------------------------------------------------------------------------------------------------------------
@@ -30,6 +35,31 @@ left join aircraftslot asl
 left join aircraft a
 	on asl.aircraft_id = a.aircraft_id
 where flight_status in ('delayed', 'canceled');
+
+----------------------------------------------------------------------------------------------------------------
+-- SQL Query 3: Get the total number of miles accumulated by a frequent flyer along with their upcoming bookings.
+----------------------------------------------------------------------------------------------------------------
+
+SELECT
+   c.customer_id,
+   c.customer_name,
+   c.miles AS total_miles,
+   COUNT(b.booking_id) AS upcoming_bookings
+FROM
+   Customer c
+LEFT join
+	Booking b
+	on b.customer_id =c.customer_id
+WHERE
+   c.frequent_flyer = TRUE
+   --AND b.created_at >= NOW()  -- Only include future bookings
+GROUP BY
+   c.customer_id,
+   c.customer_name,
+   c.miles
+ORDER BY
+   total_miles DESC;
+
 
 ----------------------------------------------------------------------------------------------------------------
 -- SQL Query 4: Find flights departing in the next 7 days that are operated by a specific aircraft model but are not yet fully booked.
@@ -179,9 +209,8 @@ WHERE
    )
 ORDER BY
    c.miles DESC;
---They all made a booking the past year!
 
-   
+
 ----------------------------------------------------------------------------------------------------------------   
 -- SQL Query 10: Get the total Bookings and Revenue Generated per Month.
 ----------------------------------------------------------------------------------------------------------------
@@ -224,7 +253,6 @@ ORDER BY
 LIMIT 5;
 
 
-
 ----------------------------------------------------------------------------------------------------------------
 -- SQL Query 12: Show how active frequent flyers have been, summarizing their total miles, number of bookings, and total money spent
 ----------------------------------------------------------------------------------------------------------------
@@ -248,11 +276,6 @@ ORDER BY
    total_money_spent DESC;
 
    
-   
 ---------------------------------------------------------------------------------------------------------
 -------------------------------------------------- END --------------------------------------------------
 ---------------------------------------------------------------------------------------------------------
-
-   
-   
-
