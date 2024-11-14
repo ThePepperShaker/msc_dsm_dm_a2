@@ -24,40 +24,67 @@ FROM merged_tables
 WHERE is_extra_legroom = 'true' AND customer_rating < 3;
 
 
--- (JQ2) Identify flights that used aircraft with maintenance issues flagged within the last 6 months and correlate them with customer feedback on comfort. WHAT IS MEANT BY CORRELATE?
-WITH maintenance_dates AS (
+WITH maintenances_with_flags AS (
    SELECT
        aml.maintenance_event_log_id,
        aml.maintenance_event_id,
-       (aml.maintenance_log->>'date')::DATE AS maintenance_date
+       (aml.maintenance_log->>'date')::DATE AS maintenance_date,
+       asl.aircraft_id
    FROM
        AircraftMaintenanceLogs aml
+   JOIN maintenanceSlot ms 
+       ON aml.maintenance_event_id = ms.maintenance_event_id
+   JOIN aircraftSlot asl
+       ON ms.slot_id = asl.slot_id
    WHERE
-   		(aml.maintenance_log->>'date')::DATE >= CURRENT_DATE - INTERVAL '6 months'  -- Filter to last 6 months
-
-
+       (aml.maintenance_log->>'date')::DATE >= CURRENT_DATE - INTERVAL '6 months'  -- Filter to last 6 months
 )
 
-,flight_dates AS (
-   SELECT
-       fs.flight_id,
-       fs.date_of_flight,
-       fs.flight_status
-   FROM
-       Flight fs
+, flights_after_maintenance AS (
+   SELECT 
+       f.flight_id,
+       f.date_of_flight,
+       asl.aircraft_id
+   FROM 
+       flight f
+   JOIN flightSlot fs 
+       ON f.flight_id = fs.flight_id
+   JOIN aircraftSlot asl
+       ON fs.slot_id = asl.slot_id
+   JOIN maintenances_with_flags mwf
+       ON asl.aircraft_id = mwf.aircraft_id
+          AND f.date_of_flight > mwf.maintenance_date  -- Flight occurs after the maintenance date
+   WHERE 
+       asl.slot_type = 'Flight'
 )
 
-SELECT
-   fd.flight_id,
-   fd.date_of_flight,
-   md.maintenance_event_id,
-   md.maintenance_date
-FROM
-   flight_dates fd
-JOIN
-   maintenance_dates md ON fd.date_of_flight = md.maintenance_date
-ORDER BY
-   fd.date_of_flight;
+, customers_identified AS (
+   SELECT 
+       DISTINCT c.customer_id
+   FROM flights_after_maintenance fam
+   JOIN trip t 
+       ON fam.flight_id = t.flight_id
+   JOIN booking b
+       ON t.booking_id = b.booking_id 
+   JOIN customer c 
+       ON b.customer_id = c.customer_id
+)
+
+-- Output final average ratings for the customers 
+SELECT 
+	ROUND(AVG((survey->>'rating')::INTEGER),2) AS avg_rating,
+    ROUND(AVG((survey->'topics'->>'comfort')::INTEGER),2) AS avg_comfort,
+    ROUND(AVG((survey->'topics'->>'service')::INTEGER),2) AS avg_service,
+    ROUND(AVG((survey->'topics'->>'cleanliness')::INTEGER),2) AS avg_cleanliness,
+    ROUND(AVG((survey->'topics'->>'entertainment')::INTEGER),2) AS avg_entertainment
+FROM customerfeedback cf
+JOIN customers_identified ci
+ON cf.customer_id = ci.customer_id;
+
+-- The outcome of this is ~3 for each rating. This makes a lot of sense since we randomly generate data between 1-5 rating and hence over a large enough sample, this should be equal to 3 fof course.
+-- Our DGP does not know about the influence of maintenance logs, and hence this does not affect rating. 
+
+
 
 
 -- (JQ3) Find customers who have not provided feedback but have specific preferences (e.g., vegetarian meals).
