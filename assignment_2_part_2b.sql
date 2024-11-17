@@ -16,12 +16,14 @@ WITH merged_tables AS (
     LEFT JOIN CustomerFeedback cf 
         ON cp.customer_id = cf.customer_id
 )
-
 -- Select only where the extra_legroom columns is true and customer rating below 3 
 SELECT
     * 
 FROM merged_tables 
 WHERE is_extra_legroom = 'true' AND customer_rating < 3;
+
+
+--- (JQ2) Identify flights that used aircraft with maintenance issues flagged within the last 6 months and correlate them with customer feedback on comfort.
 
 
 WITH maintenances_with_flags AS (
@@ -69,7 +71,6 @@ WITH maintenances_with_flags AS (
    JOIN customer c 
        ON b.customer_id = c.customer_id
 )
-
 -- Output final average ratings for the customers 
 SELECT 
 	ROUND(AVG((survey->>'rating')::INTEGER),2) AS avg_rating,
@@ -81,7 +82,7 @@ FROM customerfeedback cf
 JOIN customers_identified ci
 ON cf.customer_id = ci.customer_id;
 
--- The outcome of this is ~3 for each rating. This makes a lot of sense since we randomly generate data between 1-5 rating and hence over a large enough sample, this should be equal to 3 fof course.
+-- The outcome of this is ~3 for each rating, including average_comfort asked in the assigment. This makes a lot of sense since we randomly generate data between 1-5 rating and hence over a large enough sample, this should be equal to 3 fof course.
 -- Our DGP does not know about the influence of maintenance logs, and hence this does not affect rating. 
 
 
