@@ -1,5 +1,7 @@
 # Data Management - Assignment 2
 
+![UML Diagram](img/final_uml.png)
+
 ## Instructions for Running Files
 
 Follow these steps to set up the database, generate fake data, and run the necessary queries for each part of the assignment.
